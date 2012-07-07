@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"github.com/nshah/go.browserid"
+	"github.com/daaku/go.browserid"
 	"log"
 	"net/http"
 	"strconv"
