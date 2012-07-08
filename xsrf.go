@@ -23,7 +23,8 @@ var (
 )
 
 // Get a token for the given request. Optional additional "bits" may
-// be specified to generate unique tokens for actions.
+// be specified to generate unique tokens for actions. This may issue
+// a cookie if necessary.
 func Token(w http.ResponseWriter, r *http.Request, bits ...string) string {
 	return genToken(browserid.Get(w, r), time.Now(), bits...)
 }
