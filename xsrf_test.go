@@ -1,6 +1,7 @@
 package xsrf_test
 
 import (
+	"encoding/base64"
 	"github.com/daaku/go.xsrf"
 	"net/http"
 	"net/http/httptest"
@@ -40,5 +41,17 @@ func TestToken(t *testing.T) {
 	}
 	if xsrf.Validate(token1, w, req, "foo") {
 		t.Fatalf("Token should not be valid for foo.")
+	}
+}
+
+func TestBadButWellEncoded(t *testing.T) {
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", serverURL, nil)
+	if err != nil {
+		t.Fatalf("Unexpected error creating new request: %s", err)
+	}
+	encoded := base64.URLEncoding.EncodeToString([]byte("foo"))
+	if xsrf.Validate(encoded, w, req, "foo") {
+		t.Fatal("Token should not be valid.")
 	}
 }

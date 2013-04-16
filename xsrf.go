@@ -38,6 +38,9 @@ func Validate(token string, w http.ResponseWriter, r *http.Request, bits ...stri
 	if err != nil {
 		return false
 	}
+	if len(pair) < *sumLen {
+		return false
+	}
 	unixNano, err := strconv.ParseInt(string(pair[*sumLen:]), 10, 64)
 	if err != nil {
 		return false
