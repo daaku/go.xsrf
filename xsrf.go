@@ -15,22 +15,26 @@ import (
 )
 
 var (
-	maxAge = flag.Duration(
-		"xsrf.max-age", 24*time.Hour, "Max age for tokens.")
-	sumLen = flag.Int(
-		"xsrf.sum-len", 10, "Number of bytes from sum to use.")
-	maxUint64Len = len(fmt.Sprintf("%d", uint64(1<<63)))
+	DefaultMaxAge = 24 * time.Hour
+	DefaultSumLen = uint(10)
+	maxUint64Len  = uint(len(fmt.Sprintf("%d", uint64(1<<63))))
 )
+
+// The Provider issues and validates tokens.
+type Provider struct {
+	MaxAge time.Duration // Max-Age for tokens
+	SumLen uint          // Amount of characters from the sum to use
+}
 
 // Get a token for the given request. Optional additional "bits" may
 // be specified to generate unique tokens for actions. This may issue
 // a cookie if necessary.
-func Token(w http.ResponseWriter, r *http.Request, bits ...string) string {
-	return genToken(browserid.Get(w, r), time.Now(), bits...)
+func (p *Provider) Token(w http.ResponseWriter, r *http.Request, bits ...string) string {
+	return p.genToken(browserid.Get(w, r), time.Now(), bits...)
 }
 
 // Validate a token.
-func Validate(token string, w http.ResponseWriter, r *http.Request, bits ...string) bool {
+func (p *Provider) Validate(token string, w http.ResponseWriter, r *http.Request, bits ...string) bool {
 	if token == "" {
 		return false
 	}
@@ -38,31 +42,49 @@ func Validate(token string, w http.ResponseWriter, r *http.Request, bits ...stri
 	if err != nil {
 		return false
 	}
-	if len(pair) < *sumLen {
+	if uint(len(pair)) < p.SumLen {
 		return false
 	}
-	unixNano, err := strconv.ParseInt(string(pair[*sumLen:]), 10, 64)
+	unixNano, err := strconv.ParseInt(string(pair[p.SumLen:]), 10, 64)
 	if err != nil {
 		return false
 	}
 	issueTime := time.Unix(0, unixNano)
-	if time.Now().Sub(issueTime) >= *maxAge {
+	if time.Now().Sub(issueTime) >= p.MaxAge {
 		return false
 	}
-	expected := genToken(browserid.Get(w, r), issueTime, bits...)
+	expected := p.genToken(browserid.Get(w, r), issueTime, bits...)
 	return token == expected
 }
 
-func genToken(key string, t time.Time, bits ...string) string {
+func (p *Provider) genToken(key string, t time.Time, bits ...string) string {
 	h := hmac.New(sha1.New, []byte(key))
 	for _, bit := range bits {
 		fmt.Fprint(h, bit)
 	}
 	fmt.Fprint(h, t)
-	out := bytes.NewBuffer(make([]byte, 0, *sumLen+maxUint64Len+1))
-	_, err := fmt.Fprintf(out, "%s%d", h.Sum(nil)[:*sumLen], t.UnixNano())
+	out := bytes.NewBuffer(make([]byte, 0, p.SumLen+maxUint64Len+1))
+	_, err := fmt.Fprintf(out, "%s%d", h.Sum(nil)[:p.SumLen], t.UnixNano())
 	if err != nil {
 		log.Fatalf("Failed to create token: %s", err)
 	}
 	return base64.URLEncoding.EncodeToString(out.Bytes())
+}
+
+// Provider defined by flags.
+func ProviderFlag(name string) *Provider {
+	p := &Provider{}
+	flag.DurationVar(
+		&p.MaxAge,
+		name+".max-age",
+		DefaultMaxAge,
+		name+" max age for tokens.",
+	)
+	flag.UintVar(
+		&p.SumLen,
+		name+".sum-len",
+		DefaultSumLen,
+		name+" number of bytes from sum to use.",
+	)
+	return p
 }

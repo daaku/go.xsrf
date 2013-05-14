@@ -13,33 +13,35 @@ const (
 	bitUno    = "bitUno"
 )
 
+var provider = xsrf.ProviderFlag("default-provider")
+
 func TestToken(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", serverURL, nil)
 	if err != nil {
 		t.Fatalf("Unexpected error creating new request: %s", err)
 	}
-	token1 := xsrf.Token(w, req)
+	token1 := provider.Token(w, req)
 	if token1 == "" {
 		t.Fatalf("Was expecting non empty token1.")
 	}
-	token2 := xsrf.Token(w, req, bitUno)
+	token2 := provider.Token(w, req, bitUno)
 	if token2 == "" {
 		t.Fatalf("Was expecting non empty token2.")
 	}
 	if token1 == token2 {
 		t.Fatalf("Was expecting different tokens.")
 	}
-	if !xsrf.Validate(token1, w, req) {
+	if !provider.Validate(token1, w, req) {
 		t.Fatalf("Failed to validate token1.")
 	}
-	if !xsrf.Validate(token2, w, req, bitUno) {
+	if !provider.Validate(token2, w, req, bitUno) {
 		t.Fatalf("Failed to validate token2.")
 	}
-	if xsrf.Validate("", w, req) {
+	if provider.Validate("", w, req) {
 		t.Fatalf("Empty token should not be valid.")
 	}
-	if xsrf.Validate(token1, w, req, "foo") {
+	if provider.Validate(token1, w, req, "foo") {
 		t.Fatalf("Token should not be valid for foo.")
 	}
 }
@@ -51,7 +53,7 @@ func TestBadButWellEncoded(t *testing.T) {
 		t.Fatalf("Unexpected error creating new request: %s", err)
 	}
 	encoded := base64.URLEncoding.EncodeToString([]byte("foo"))
-	if xsrf.Validate(encoded, w, req, "foo") {
+	if provider.Validate(encoded, w, req, "foo") {
 		t.Fatal("Token should not be valid.")
 	}
 }
