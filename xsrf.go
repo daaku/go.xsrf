@@ -7,11 +7,12 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"github.com/daaku/go.browserid"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/daaku/go.browserid"
 )
 
 var (
@@ -22,15 +23,16 @@ var (
 
 // The Provider issues and validates tokens.
 type Provider struct {
-	MaxAge time.Duration // Max-Age for tokens
-	SumLen uint          // Amount of characters from the sum to use
+	MaxAge    time.Duration     // Max-Age for tokens
+	SumLen    uint              // Amount of characters from the sum to use
+	BrowserID *browserid.Cookie // Browser ID cookie accessor
 }
 
 // Get a token for the given request. Optional additional "bits" may
 // be specified to generate unique tokens for actions. This may issue
 // a cookie if necessary.
 func (p *Provider) Token(w http.ResponseWriter, r *http.Request, bits ...string) string {
-	return p.genToken(browserid.Get(w, r), time.Now(), bits...)
+	return p.genToken(p.BrowserID.Get(w, r), time.Now(), bits...)
 }
 
 // Validate a token.
@@ -53,7 +55,7 @@ func (p *Provider) Validate(token string, w http.ResponseWriter, r *http.Request
 	if time.Now().Sub(issueTime) >= p.MaxAge {
 		return false
 	}
-	expected := p.genToken(browserid.Get(w, r), issueTime, bits...)
+	expected := p.genToken(p.BrowserID.Get(w, r), issueTime, bits...)
 	return token == expected
 }
 

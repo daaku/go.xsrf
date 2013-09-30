@@ -2,10 +2,12 @@ package xsrf_test
 
 import (
 	"encoding/base64"
-	"github.com/daaku/go.xsrf"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/daaku/go.browserid"
+	"github.com/daaku/go.xsrf"
 )
 
 const (
@@ -14,6 +16,10 @@ const (
 )
 
 var provider = xsrf.ProviderFlag("default-provider")
+
+func init() {
+	provider.BrowserID = browserid.CookieFlag("browserid")
+}
 
 func TestToken(t *testing.T) {
 	w := httptest.NewRecorder()
