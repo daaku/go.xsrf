@@ -1,3 +1,4 @@
+// Package xsrf provides methods for generating and validating XSRF tokens.
 package xsrf
 
 import (
