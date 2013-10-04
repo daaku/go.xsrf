@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	DefaultMaxAge = 24 * time.Hour
-	DefaultSumLen = uint(10)
+	defaultMaxAge = 24 * time.Hour
+	defaultSumLen = uint(10)
 	maxUint64Len  = uint(len(fmt.Sprintf("%d", uint64(1<<63))))
 )
 
@@ -74,19 +74,20 @@ func (p *Provider) genToken(key string, t time.Time, bits ...string) string {
 	return base64.URLEncoding.EncodeToString(out.Bytes())
 }
 
-// Provider defined by flags.
+// Provider defined by flags. Default MaxAge is 24 hours and default sum length
+// is 10 characters.
 func ProviderFlag(name string) *Provider {
 	p := &Provider{}
 	flag.DurationVar(
 		&p.MaxAge,
 		name+".max-age",
-		DefaultMaxAge,
+		defaultMaxAge,
 		name+" max age for tokens.",
 	)
 	flag.UintVar(
 		&p.SumLen,
 		name+".sum-len",
-		DefaultSumLen,
+		defaultSumLen,
 		name+" number of bytes from sum to use.",
 	)
 	return p
