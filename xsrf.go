@@ -6,7 +6,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha1"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -72,23 +71,4 @@ func (p *Provider) genToken(key string, t time.Time, bits ...string) string {
 		log.Fatalf("Failed to create token: %s", err)
 	}
 	return base64.URLEncoding.EncodeToString(out.Bytes())
-}
-
-// Provider defined by flags. Default MaxAge is 24 hours and default sum length
-// is 10 characters.
-func ProviderFlag(name string) *Provider {
-	p := &Provider{}
-	flag.DurationVar(
-		&p.MaxAge,
-		name+".max-age",
-		defaultMaxAge,
-		name+" max age for tokens.",
-	)
-	flag.UintVar(
-		&p.SumLen,
-		name+".sum-len",
-		defaultSumLen,
-		name+" number of bytes from sum to use.",
-	)
-	return p
 }
